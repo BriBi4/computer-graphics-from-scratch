@@ -10,8 +10,8 @@ uint8_t modifyColorChannelIntensity(float k, uint8_t x) {
 	return (uint8_t) (kx);
 }
 
-struct color modifyColorIntensity(float k, struct color c) {
-	struct color scaledColor = {
+struct Color modifyColorIntensity(float k, struct Color c) {
+	struct Color scaledColor = {
 		modifyColorChannelIntensity(k, c.r),
 		modifyColorChannelIntensity(k, c.g),
 		modifyColorChannelIntensity(k, c.b)
@@ -25,10 +25,11 @@ uint8_t addColorChannels(uint8_t x, uint8_t y) {
 	return x + y;
 }
 
-struct color addColors(struct color c1, struct color c2) {
-	struct color colorSum = {
+struct Color addColors(struct Color c1, struct Color c2) {
+	struct Color colorSum = {
 		addColorChannels(c1.r, c2.r),
 		addColorChannels(c1.g, c2.g),
 		addColorChannels(c1.b, c2.b)
 	};
+	return colorSum;
 }

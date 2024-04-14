@@ -15,7 +15,7 @@ extern SDL_Window* window;
 extern SDL_Renderer* renderer;
 
 void setupCanvas();
-void putPixel(int x, int y, struct color c);
+void putPixel(int x, int y, struct Color c);
 void displayCanvas();
 bool windowClosed();
 void cleanupCanvas();

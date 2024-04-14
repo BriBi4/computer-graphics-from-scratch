@@ -19,7 +19,7 @@ void setupCanvas() {
 	renderer = SDL_CreateRenderer(window, -1, 0);
 }
 
-void putPixel(int x, int y, struct color c) {
+void putPixel(int x, int y, struct Color c) {
 	SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, 255);
 	int xPos = (CANVAS_WIDTH/2) + x;
 	int yPos = (CANVAS_HEIGHT/2) - y;
