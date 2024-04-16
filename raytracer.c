@@ -12,6 +12,8 @@ struct Vector canvasToViewport(int canvasX, int canvasY);
 struct Color traceRay(struct Vector origin, struct Vector direction, float minDist, float maxDist);
 float *intersectRaySphere(struct Vector origin, struct Vector direction, struct Sphere sphere);
 
+float computeLighting(struct Vector point, struct Vector normal);
+
 int main(int argc, char *argv[]) {
 	setupCanvas();
 	paintCanvas();
@@ -48,10 +50,8 @@ struct Color traceRay(struct Vector origin, struct Vector direction, float minDi
 	float closestDist = FLT_MAX;
 	struct Sphere *closestSphere = NULL;
 
-	for (int i = 0; i < sizeof(SPHERES) / sizeof(struct Sphere); i++) {
-		//printf("%d: ", i);
+	for (int i = 0; i < sizeof(SPHERES)/sizeof(struct Sphere); i++) {
 		float *distances = intersectRaySphere(origin, direction, SPHERES[i]);
-		//printf("%f, %f\n", distances[0], distances[1]);
 		if (distances[0] > minDist && distances[0] < maxDist && distances[0] < closestDist) {
 			closestDist = distances[0];
 			closestSphere = (struct Sphere*)&SPHERES[i];
@@ -62,10 +62,14 @@ struct Color traceRay(struct Vector origin, struct Vector direction, float minDi
 		}
 	}
 
-	if (closestSphere == NULL)
+	if (closestSphere == NULL) {
 		return BACKGROUND_COLOR;
-	//printf("%d, %d, %d\n", (*closestSphere).color.r, (*closestSphere).color.g, (*closestSphere).color.b);
-	return (*closestSphere).color;
+	}
+	
+	struct Vector point = addVectors( origin, scaleVector(closestDist, direction) );
+	struct Vector normal = subtractVectors(point, closestSphere->center);
+	normal = normalize(normal);
+	return modifyColorIntensity(computeLighting(point, normal), closestSphere->color);
 }
 
 float *intersectRaySphere(struct Vector origin, struct Vector direction, struct Sphere sphere) {
@@ -77,7 +81,6 @@ float *intersectRaySphere(struct Vector origin, struct Vector direction, struct 
 	float c = dotProduct(CO, CO) - (r*r);
 
 	float discriminant = (b*b) - (4*a*c);
-	//printf("discriminant: %f\n", discriminant);
 	if (discriminant < 0) {
 		static float distances[2] = {FLT_MAX, FLT_MAX};
 		return distances;
@@ -87,4 +90,25 @@ float *intersectRaySphere(struct Vector origin, struct Vector direction, struct 
 	distances[0] = (-b + sqrt(discriminant)) / (2*a);
 	distances[1] = (-b - sqrt(discriminant)) / (2*a);
 	return distances;
+}
+
+float computeLighting(struct Vector point, struct Vector normal) {
+	float intensity = 0;
+	for (int i = 0; i < sizeof(LIGHTS)/sizeof(struct Light); i++) {
+		if (LIGHTS[i].type == LIGHT_AMBIENT) {
+			intensity += LIGHTS[i].intensity;
+		} else {
+			struct Vector light_direction;
+			if (LIGHTS[i].type == LIGHT_POINT) {
+				light_direction = subtractVectors(LIGHTS[i].posOrDir, point);
+			} else {
+				light_direction = LIGHTS[i].posOrDir;
+			}
+			float normalDotLight = dotProduct(normal, light_direction);
+			if (normalDotLight > 0) {
+				intensity += LIGHTS[i].intensity * normalDotLight / ( magnitude(normal)*magnitude(light_direction) );
+			}
+		}
+	}
+	return intensity;
 }
