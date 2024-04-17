@@ -7,9 +7,15 @@
 #include "vector.h"
 #include "color.h"
 
+struct Intersection {
+	struct Sphere *sphere;
+	float distance;
+};
+
 void paintCanvas();
 struct Vector canvasToViewport(int canvasX, int canvasY);
 struct Color traceRay(struct Vector origin, struct Vector direction, float minDist, float maxDist);
+struct Intersection closestIntersection(struct Vector origin, struct Vector direction, float minDist, float maxDist);
 float *intersectRaySphere(struct Vector origin, struct Vector direction, struct Sphere sphere);
 
 float computeLighting(struct Vector point, struct Vector normal, struct Vector viewDirection, float specular);
@@ -47,20 +53,9 @@ struct Vector canvasToViewport(int canvasX, int canvasY) {
 }
 
 struct Color traceRay(struct Vector origin, struct Vector direction, float minDist, float maxDist) {
-	float closestDist = FLT_MAX;
-	struct Sphere *closestSphere = NULL;
-
-	for (int i = 0; i < sizeof(SPHERES)/sizeof(struct Sphere); i++) {
-		float *distances = intersectRaySphere(origin, direction, SPHERES[i]);
-		if (distances[0] > minDist && distances[0] < maxDist && distances[0] < closestDist) {
-			closestDist = distances[0];
-			closestSphere = (struct Sphere*)&SPHERES[i];
-		}
-		if (distances[1] > minDist && distances[1] < maxDist && distances[1] < closestDist) {
-			closestDist = distances[1];
-			closestSphere = (struct Sphere*)&SPHERES[i];
-		}
-	}
+	struct Intersection intersection = closestIntersection(origin, direction, minDist, maxDist);
+	struct Sphere *closestSphere = intersection.sphere;
+	float closestDist = intersection.distance;
 
 	if (closestSphere == NULL) {
 		return BACKGROUND_COLOR;
@@ -70,6 +65,24 @@ struct Color traceRay(struct Vector origin, struct Vector direction, float minDi
 	struct Vector normal = subtractVectors(point, closestSphere->center);
 	normal = normalize(normal);
 	return modifyColorIntensity(computeLighting(point, normal, scaleVector(-1, direction), closestSphere->specular), closestSphere->color);
+}
+
+struct Intersection closestIntersection(struct Vector origin, struct Vector direction, float minDist, float maxDist) {
+	float closestDist = FLT_MAX;
+	struct Sphere *closestSphere = NULL;
+	for (int i = 0; i < sizeof(SPHERES)/sizeof(struct Sphere); i++) {
+		float *distances = intersectRaySphere(origin, direction, SPHERES[i]);
+		if (distances[0] > minDist && distances[0] < maxDist && distances[0] < closestDist) {
+			closestDist = distances[0];
+			closestSphere = (struct Sphere*) &SPHERES[i];
+		}
+		if (distances[1] > minDist && distances[1] < maxDist && distances[1] < closestDist) {
+			closestDist = distances[1];
+			closestSphere = (struct Sphere*) &SPHERES[i];
+		}
+	}
+	struct Intersection intersection = {closestSphere, closestDist};
+	return intersection;
 }
 
 float *intersectRaySphere(struct Vector origin, struct Vector direction, struct Sphere sphere) {
@@ -99,10 +112,19 @@ float computeLighting(struct Vector point, struct Vector normal, struct Vector v
 			intensity += LIGHTS[i].intensity;
 		} else {
 			struct Vector lightDirection;
+			float maxDist;
 			if (LIGHTS[i].type == LIGHT_POINT) {
 				lightDirection = subtractVectors(LIGHTS[i].posOrDir, point);
+				maxDist = 1;
 			} else {
 				lightDirection = LIGHTS[i].posOrDir;
+				maxDist = FLT_MAX;
+			}
+
+			// Shadow check
+			struct Intersection shadowIntersection = closestIntersection(point, lightDirection, 0.001, maxDist);
+			if (shadowIntersection.sphere != NULL) {
+				continue;
 			}
 
 			// Diffuse
