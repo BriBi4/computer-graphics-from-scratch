@@ -12,7 +12,7 @@ struct Vector canvasToViewport(int canvasX, int canvasY);
 struct Color traceRay(struct Vector origin, struct Vector direction, float minDist, float maxDist);
 float *intersectRaySphere(struct Vector origin, struct Vector direction, struct Sphere sphere);
 
-float computeLighting(struct Vector point, struct Vector normal);
+float computeLighting(struct Vector point, struct Vector normal, struct Vector viewDirection, float specular);
 
 int main(int argc, char *argv[]) {
 	setupCanvas();
@@ -69,7 +69,7 @@ struct Color traceRay(struct Vector origin, struct Vector direction, float minDi
 	struct Vector point = addVectors( origin, scaleVector(closestDist, direction) );
 	struct Vector normal = subtractVectors(point, closestSphere->center);
 	normal = normalize(normal);
-	return modifyColorIntensity(computeLighting(point, normal), closestSphere->color);
+	return modifyColorIntensity(computeLighting(point, normal, scaleVector(-1, direction), closestSphere->specular), closestSphere->color);
 }
 
 float *intersectRaySphere(struct Vector origin, struct Vector direction, struct Sphere sphere) {
@@ -92,21 +92,32 @@ float *intersectRaySphere(struct Vector origin, struct Vector direction, struct 
 	return distances;
 }
 
-float computeLighting(struct Vector point, struct Vector normal) {
+float computeLighting(struct Vector point, struct Vector normal, struct Vector viewDirection, float specular) {
 	float intensity = 0;
 	for (int i = 0; i < sizeof(LIGHTS)/sizeof(struct Light); i++) {
 		if (LIGHTS[i].type == LIGHT_AMBIENT) {
 			intensity += LIGHTS[i].intensity;
 		} else {
-			struct Vector light_direction;
+			struct Vector lightDirection;
 			if (LIGHTS[i].type == LIGHT_POINT) {
-				light_direction = subtractVectors(LIGHTS[i].posOrDir, point);
+				lightDirection = subtractVectors(LIGHTS[i].posOrDir, point);
 			} else {
-				light_direction = LIGHTS[i].posOrDir;
+				lightDirection = LIGHTS[i].posOrDir;
 			}
-			float normalDotLight = dotProduct(normal, light_direction);
+
+			// Diffuse
+			float normalDotLight = dotProduct(normal, lightDirection);
 			if (normalDotLight > 0) {
-				intensity += LIGHTS[i].intensity * normalDotLight / ( magnitude(normal)*magnitude(light_direction) );
+				intensity += LIGHTS[i].intensity * normalDotLight / ( magnitude(normal)*magnitude(lightDirection) );
+			}
+
+			// Specular
+			if (specular != -1) {
+				struct Vector reflectedLightDirection = subtractVectors(scaleVector(2*dotProduct(normal, lightDirection), normal), lightDirection);
+				float reflectedLightDotView = dotProduct(reflectedLightDirection, viewDirection);
+				if (reflectedLightDotView > 0) {
+					intensity += LIGHTS[i].intensity * pow(reflectedLightDotView / (magnitude(reflectedLightDirection)*magnitude(viewDirection)), specular);
+				}
 			}
 		}
 	}

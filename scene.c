@@ -11,10 +11,11 @@ const struct Vector CAMERA_POSITION = {0, 0, 0};
 
 const struct Color BACKGROUND_COLOR = {255, 255, 255};
 
-const struct Sphere SPHERES[3] = {
-	{ {0, -1, 3}, 1, {255, 0, 0} },
-	{ {2, 0, 4}, 1, {0, 0, 255} },
-	{ {-2, 0, 4}, 1, {0, 255, 0} }
+const struct Sphere SPHERES[4] = {
+	{ {0, -1, 3}, 1, {255, 0, 0}, 500 },
+	{ {2, 0, 4}, 1, {0, 0, 255}, 500 },
+	{ {-2, 0, 4}, 1, {0, 255, 0}, 10 },
+	{ {0, -5001, 0}, 5000, {255, 255, 0}, 1000 }
 };
 
 const struct Light LIGHTS[3] = {

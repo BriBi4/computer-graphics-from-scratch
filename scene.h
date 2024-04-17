@@ -20,6 +20,7 @@ struct Sphere {
 	struct Vector center;
 	float radius;
 	struct Color color;
+	float specular;
 };
 
 struct Light {
@@ -28,7 +29,7 @@ struct Light {
 	struct Vector posOrDir;
 };
 
-extern const struct Sphere SPHERES[3];
+extern const struct Sphere SPHERES[4];
 extern const struct Light LIGHTS[3];
 
 #endif
