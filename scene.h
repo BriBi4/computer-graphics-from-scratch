@@ -21,6 +21,7 @@ struct Sphere {
 	float radius;
 	struct Color color;
 	float specular;
+	float reflective;
 };
 
 struct Light {

@@ -12,13 +12,17 @@ struct Intersection {
 	float distance;
 };
 
+const int RECURSION_LIMIT = 1;
+
 void paintCanvas();
 struct Vector canvasToViewport(int canvasX, int canvasY);
-struct Color traceRay(struct Vector origin, struct Vector direction, float minDist, float maxDist);
+struct Color traceRay(struct Vector origin, struct Vector direction, float minDist, float maxDist, int recursionDepth);
 struct Intersection closestIntersection(struct Vector origin, struct Vector direction, float minDist, float maxDist);
 float *intersectRaySphere(struct Vector origin, struct Vector direction, struct Sphere sphere);
 
 float computeLighting(struct Vector point, struct Vector normal, struct Vector viewDirection, float specular);
+
+struct Vector reflectRay(struct Vector ray, struct Vector normal);
 
 int main(int argc, char *argv[]) {
 	setupCanvas();
@@ -37,7 +41,7 @@ void paintCanvas() {
 	for (int x = -CANVAS_WIDTH/2; x < CANVAS_WIDTH/2; x++) {
 		for (int y = -CANVAS_HEIGHT/2; y < CANVAS_HEIGHT/2; y++) {
 			struct Vector D = canvasToViewport(x, y);
-			struct Color color = traceRay(origin, D, 1, FLT_MAX);
+			struct Color color = traceRay(origin, D, 1, FLT_MAX, RECURSION_LIMIT);
 			putPixel(x, y, color);
 		}
 	}
@@ -52,7 +56,7 @@ struct Vector canvasToViewport(int canvasX, int canvasY) {
 	return viewportPoint;
 }
 
-struct Color traceRay(struct Vector origin, struct Vector direction, float minDist, float maxDist) {
+struct Color traceRay(struct Vector origin, struct Vector direction, float minDist, float maxDist, int recursionDepth) {
 	struct Intersection intersection = closestIntersection(origin, direction, minDist, maxDist);
 	struct Sphere *closestSphere = intersection.sphere;
 	float closestDist = intersection.distance;
@@ -60,11 +64,24 @@ struct Color traceRay(struct Vector origin, struct Vector direction, float minDi
 	if (closestSphere == NULL) {
 		return BACKGROUND_COLOR;
 	}
-	
+
+	// Compute local color
 	struct Vector point = addVectors( origin, scaleVector(closestDist, direction) );
 	struct Vector normal = subtractVectors(point, closestSphere->center);
 	normal = normalize(normal);
-	return modifyColorIntensity(computeLighting(point, normal, scaleVector(-1, direction), closestSphere->specular), closestSphere->color);
+	struct Color localColor = modifyColorIntensity(computeLighting(point, normal, scaleVector(-1, direction), closestSphere->specular), closestSphere->color);
+
+	// If we hit the recursion limit or the object is not reflective, we're done
+	float reflective = closestSphere->reflective;
+	if (recursionDepth <= 0 || reflective <= 0) {
+		return localColor;
+	}
+
+	// Compute the reflected color
+	struct Vector reflectedDirection = reflectRay(scaleVector(-1, direction), normal);
+	struct Color reflectedColor = traceRay(point, reflectedDirection, 0.1, FLT_MAX, recursionDepth-1);
+
+	return addColors( modifyColorIntensity(1-reflective, localColor), modifyColorIntensity(reflective, reflectedColor) );
 }
 
 struct Intersection closestIntersection(struct Vector origin, struct Vector direction, float minDist, float maxDist) {
@@ -122,7 +139,7 @@ float computeLighting(struct Vector point, struct Vector normal, struct Vector v
 			}
 
 			// Shadow check
-			struct Intersection shadowIntersection = closestIntersection(point, lightDirection, 0.001, maxDist);
+			struct Intersection shadowIntersection = closestIntersection(point, lightDirection, 0.1, maxDist);
 			if (shadowIntersection.sphere != NULL) {
 				continue;
 			}
@@ -135,7 +152,7 @@ float computeLighting(struct Vector point, struct Vector normal, struct Vector v
 
 			// Specular
 			if (specular != -1) {
-				struct Vector reflectedLightDirection = subtractVectors(scaleVector(2*dotProduct(normal, lightDirection), normal), lightDirection);
+				struct Vector reflectedLightDirection = reflectRay(lightDirection, normal);
 				float reflectedLightDotView = dotProduct(reflectedLightDirection, viewDirection);
 				if (reflectedLightDotView > 0) {
 					intensity += LIGHTS[i].intensity * pow(reflectedLightDotView / (magnitude(reflectedLightDirection)*magnitude(viewDirection)), specular);
@@ -144,4 +161,8 @@ float computeLighting(struct Vector point, struct Vector normal, struct Vector v
 		}
 	}
 	return intensity;
+}
+
+struct Vector reflectRay(struct Vector ray, struct Vector normal) {
+	return subtractVectors(scaleVector(2*dotProduct(normal, ray), normal), ray);
 }
