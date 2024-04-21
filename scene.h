@@ -13,6 +13,7 @@ extern const float VIEWPORT_HEIGHT;
 extern const float VIEWPORT_DISTANCE;
 
 extern const struct Vector CAMERA_POSITION;
+extern const struct Matrix CAMERA_ROTATION;
 
 extern const struct Color BACKGROUND_COLOR;
 

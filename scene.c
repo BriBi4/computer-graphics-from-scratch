@@ -8,6 +8,7 @@ const float VIEWPORT_HEIGHT = VIEWPORT_WIDTH;
 const float VIEWPORT_DISTANCE = VIEWPORT_WIDTH;
 
 const struct Vector CAMERA_POSITION = {0, 0, 0};
+const struct Matrix CAMERA_ROTATION = { {1, 0, 0}, {0, 1, 0}, {0, 0, 1} };
 
 const struct Color BACKGROUND_COLOR = {0, 0, 0};
 

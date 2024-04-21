@@ -40,8 +40,8 @@ void paintCanvas() {
 	struct Vector origin = CAMERA_POSITION;
 	for (int x = -CANVAS_WIDTH/2; x < CANVAS_WIDTH/2; x++) {
 		for (int y = -CANVAS_HEIGHT/2; y < CANVAS_HEIGHT/2; y++) {
-			struct Vector D = canvasToViewport(x, y);
-			struct Color color = traceRay(origin, D, 1, FLT_MAX, RECURSION_LIMIT);
+			struct Vector direction = multiplyMatrixVector(CAMERA_ROTATION, canvasToViewport(x, y));
+			struct Color color = traceRay(origin, direction, 1, FLT_MAX, RECURSION_LIMIT);
 			putPixel(x, y, color);
 		}
 	}

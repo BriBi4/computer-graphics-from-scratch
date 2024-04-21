@@ -38,3 +38,17 @@ struct Vector normalize(struct Vector v) {
 	struct Vector normalizedVector = { v.x/m, v.y/m, v.z/m };
 	return normalizedVector;
 }
+
+struct Vector multiplyMatrixVector(struct Matrix matrix, struct Vector vector) {
+	float *matrixArrays[3] = { matrix.a, matrix.b, matrix.c };
+	float vectorArray[3] = { vector.x, vector.y, vector.z };
+	float result[3] = {0, 0, 0,};
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			result[i] += vectorArray[j]*matrixArrays[i][j];
+		}
+	}
+	struct Vector resultVector = {result[0], result[1], result[2]};
+	return resultVector;
+}
+
