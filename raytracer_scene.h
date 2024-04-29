@@ -1,5 +1,5 @@
-#ifndef SCENE_H_INCLUDED
-#define SCENE_H_INCLUDED
+#ifndef RAYTRACER_SCENE_H_INCLUDED
+#define RAYTRACER_SCENE_H_INCLUDED
 
 #include "vector.h"
 #include "color.h"

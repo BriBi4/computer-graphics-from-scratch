@@ -3,7 +3,7 @@
 #include <math.h>
 
 #include "canvas.h"
-#include "scene.h"
+#include "raytracer_scene.h"
 #include "vector.h"
 #include "color.h"
 

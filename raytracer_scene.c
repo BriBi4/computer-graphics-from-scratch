@@ -1,4 +1,4 @@
-#include "scene.h"
+#include "raytracer_scene.h"
 
 #include "vector.h"
 #include "color.h"
